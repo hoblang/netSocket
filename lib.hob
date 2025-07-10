@@ -52,7 +52,8 @@ public type Client = struct {
 
 public fun NetSocket.accept(self) -> Result.<Client> {
     var address: SockAddrIn;
-    return c.err.handle(c.accept(self, &address, address.sizeof))
+    var length: usize = address.sizeof;
+    return c.err.handle(c.accept(self, &address, &length))
         .mapWith.<SockAddrIn, Client>(address, fun (address, socket) {
             return {
                 socket: socket as ?,
