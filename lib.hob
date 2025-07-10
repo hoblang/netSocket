@@ -46,8 +46,8 @@ public fun bind(port: u16, backlog: usize) -> Result.<NetSocket> {
 }
 
 public type Client = struct {
-    socket: io.socket.Socket,
-    address: SockAddrIn,
+    public socket: io.socket.Socket,
+    public address: SockAddrIn,
 };
 
 public fun NetSocket.accept(self) -> Result.<Client> {
