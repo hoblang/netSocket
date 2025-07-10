@@ -28,17 +28,17 @@ public fun bind(port: u16, backlog: usize) -> Result.<NetSocket> {
         address: 0,
         _pad: undefined,
     };
+
+    var reuse: i32 = 1;
+    if c.setsockopt(socket, c.SoLevel.socket, c.SoName.reuseAddr, &reuse, reuse.sizeof) < 0 {
+        return c.err.err.<NetSocket>();
+    }
     
     if c.bind(socket, &address, address.sizeof) < 0 {
         return c.err.err.<NetSocket>();
     }
 
     if c.listen(socket, backlog) < 0 {
-        return c.err.err.<NetSocket>();
-    }
-
-    var reuse: i32 = 1;
-    if c.setsockopt(socket, c.SoLevel.socket, c.SoName.reuseAddr, &reuse, reuse.sizeof) < 0 {
         return c.err.err.<NetSocket>();
     }
 
