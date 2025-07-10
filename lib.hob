@@ -1,0 +1,62 @@
+import c;
+import io;
+import result;
+
+use result.Result;
+
+public type NetSocket = io.socket.Socket;
+
+type SockAddrIn = struct {
+    family: u16,
+    port: u16,
+    address: u32,
+    _pad: [8]u8,
+};
+
+fun htons(port: u16) -> u16 {
+    return ((port & 0xff) << 8) | ((port >> 8) & 0xff);
+}
+
+public fun bind(port: u16, backlog: usize) -> Result.<NetSocket> {
+    final socket = c.socket(c.AF_INET, c.SOCK_STREAM, 0) as NetSocket;
+    if socket < 0 {
+        return c.err.err.<NetSocket>();
+    }
+    var address: SockAddrIn = {
+        family: c.AF_INET as ?,
+        port: htons(port),
+        address: 0,
+        _pad: undefined,
+    };
+    
+    if c.bind(socket, &address, address.sizeof) < 0 {
+        return c.err.err.<NetSocket>();
+    }
+
+    if c.listen(socket, backlog) < 0 {
+        return c.err.err.<NetSocket>();
+    }
+
+    var reuse: i32 = 1;
+    if c.setsockopt(socket, c.SoLevel.socket, c.SoName.reuseAddr, &reuse, reuse.sizeof) < 0 {
+        return c.err.err.<NetSocket>();
+    }
+
+    return result.ok.<NetSocket>(socket);
+}
+
+public type Client = struct {
+    socket: io.socket.Socket,
+    address: SockAddrIn,
+};
+
+public fun NetSocket.accept(self) -> Result.<Client> {
+    var address: SockAddrIn;
+    return c.err.handle(c.accept(self, &address, address.sizeof))
+        .mapWith.<SockAddrIn, Client>(address, fun (address, socket) {
+            return {
+                socket: socket as ?,
+                address: address,
+            };
+        });
+}
